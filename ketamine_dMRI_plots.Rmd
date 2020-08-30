@@ -1,0 +1,105 @@
+---
+title: 'Sydnor et al: Ketamine and White Matter Microstructure Plots'
+author: "Valerie Jill Sydnor"
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    toc: no
+    toc_depth: '5'
+  html_document:
+    toc: no
+    toc_depth: '5'
+    df_print: paged
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = "./")
+knitr::opts_chunk$set(comment = NA)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+ketamine <- read.csv("../MGHKetamine_Clinical_Imaging_Data.csv", header=TRUE )
+```
+
+## Pre-Infusion White Matter FA is Associated with 24-Hour Depression Improvement
+
+*Left CB-hippocampal portion*
+
+```{r}
+ggplot(ketamine, aes(HDRS.24hr.percentchange, Lcing2_baselineFA)) + 
+  geom_point(col=c("steelblue3"), size=2) + 
+  labs(x=" ", y=" ", title="\nLeft Cingulum Bundle-Hippocampal") +
+  theme(plot.title=element_text(face="bold", family="Arial", hjust = 0.5, size=15.5, margin=margin(0,0,10,0)),
+        axis.line = element_line(colour = "black"),
+        panel.background=element_blank()) + 
+  theme_light() +
+  theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(),  panel.border = element_blank()) +
+  geom_smooth(method='lm', fullrange=TRUE, se=TRUE, col=c("black"), fill=alpha(c("gray90"), 0.01)) +
+  scale_x_continuous(breaks = c(40,60,80,100), labels=c("40","60","80","100"), limits = c(25,100)) 
+```
+
+
+*Left SLF*
+```{r}
+ggplot(ketamine, aes(HDRS.24hr.percentchange, Lslf_baselineFA)) + 
+  geom_point(col=c("steelblue3"), size=2) + 
+  labs(x=" ", y=" ", title="\nLeft Superior Longitudinal Fasciculus ") +
+  theme(plot.title=element_text(face="bold", family="Arial", hjust = 0.5, size=15.5, margin=margin(0,0,10,0)),
+        axis.line = element_line(colour = "black"),
+        panel.background=element_blank()) + 
+  theme_light() +
+  theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(),  panel.border = element_blank()) +
+  geom_smooth(method='lm', fullrange=TRUE, se=TRUE, col=c("black"), fill=alpha(c("gray90"), 0.01)) +
+  scale_x_continuous(breaks = c(40,60,80,100), labels=c("40","60","80","100"), limits = c(25,100))
+```
+
+## Post-Ketamine Change in White Matter FA is Associated with 24-Hour Depression Improvement
+
+*CC-forceps minor*
+```{r}
+ggplot(ketamine, aes(HDRS.24hr.percentchange, Fminor_FA_percentchange)) + 
+  geom_point(col=c("mediumorchid4"), size=2) + 
+  labs(x=" ", y=" ", title="\nCC-ForcepsMinor ") +
+  theme(plot.title=element_text(face="bold", family="Arial", hjust = 0.5, size=15.5, margin=margin(0,0,10,0)),
+        axis.line = element_line(colour = "black"),
+        panel.background=element_blank()) + 
+  theme_light() +
+  theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(),  panel.border = element_blank()) +
+  geom_smooth(method='lm', fullrange=TRUE, se=TRUE, col=c("black"), fill=alpha(c("gray90"), 0.01)) +
+  scale_x_continuous(breaks = c(40,60,80,100), labels=c("40","60","80","100"), limits = c(25,100))
+```
+
+*Right UF*
+```{r}
+ggplot(ketamine, aes(HDRS.24hr.percentchange, Runc_FA_percentchange)) + 
+  geom_point(col=c("mediumorchid4"), size=2) + 
+  labs(x=" ", y=" ", title="\nRight Uncinate Fasciculus") +
+  theme(plot.title=element_text(face="bold", family="Arial", hjust = 0.5, size=15.5, margin=margin(0,0,10,0)),
+        axis.line = element_line(colour = "black"),
+        panel.background=element_blank()) + 
+  theme_light() +
+  theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(),  panel.border = element_blank()) +
+  geom_smooth(method='lm', fullrange=TRUE, se=TRUE, col=c("black"), fill=alpha(c("gray90"), 0.01)) +
+  scale_x_continuous(breaks = c(40,60,80,100), labels=c("40","60","80","100"), limits = c(25,100))
+```
+
+*Left UF*
+```{r}
+ggplot(ketamine, aes(HDRS.24hr.percentchange, Lunc_FA_percentchange)) + 
+  geom_point(col=c("mediumorchid4"), size=2) + 
+  labs(x=" ", y=" ", title="\nLeft Uncinate Fasciculus ") +
+  theme(plot.title=element_text(face="bold", family="Arial", hjust = 0.5, size=15.5, margin=margin(0,0,10,0)),
+        axis.line = element_line(colour = "black"),
+        panel.background=element_blank()) + 
+  theme_light() +
+  theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(),  panel.border = element_blank()) +
+  geom_smooth(method='lm', fullrange=TRUE, se=TRUE, col=c("black"), fill=alpha(c("gray90"), 0.01)) +
+  scale_x_continuous(breaks = c(40,60,80,100), labels=c("40","60","80","100"), limits = c(25,100))
+```
