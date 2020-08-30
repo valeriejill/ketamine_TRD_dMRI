@@ -1,0 +1,317 @@
+---
+title: 'Sydnor et al: Ketamine and White Matter Microstructure Results'
+author: "Valerie Jill Sydnor"
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    toc: yes
+    toc_depth: '5'
+  html_document:
+    toc: yes
+    toc_depth: '5'
+    df_print: paged
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "./")
+knitr::opts_chunk$set(comment = NA)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+library(knitr)
+library(rmdformats)
+library(dplyr)
+library(reader)
+library(kableExtra)
+library(ggplot2)
+library(ppcor)
+library(xtable)
+```
+
+```{r}
+ketamine <- read.csv("../MGHKetamine_Clinical_Imaging_Data.csv", header=TRUE )
+```
+
+# RESULTS
+
+## Replication of Ketamine’s Antidepressant Efficacy for TRD
+
+*Study Sample Age*
+```{r}
+age.mean <- mean(ketamine$Age)
+age.sd <- sd(ketamine$Age)
+cat(age.mean, age.sd)
+```
+
+*Study Sample Sex Distribution*
+```{r}
+(sum(ketamine$Gender == "0"))/(nrow(ketamine))
+```
+
+*HAM-D28 24-hour percent improvement*
+```{r}
+hamd.improve.mean <- mean(ketamine$HDRS.24hr.percentchange)
+hamd.improve.sd <- sd(ketamine$HDRS.24hr.percentchange)
+cat(hamd.improve.mean, hamd.improve.sd)
+```
+
+* Treatment Responders
+```{r}
+responders <- ketamine %>% filter(HDRS.24hr.percentchange > 50) #identify responders
+print("Number of responders")
+nrow(responders)
+responders.improve.mean <- mean(responders$HDRS.24hr.percentchange)
+responders.improve.sd <- sd(responders$HDRS.24hr.percentchange)
+cat(responders.improve.mean, responders.improve.sd)
+```  
+
+* Treatment Non-Responders
+```{r}
+nonresponders <- ketamine %>% filter(HDRS.24hr.percentchange < 50) #identify non-responders
+print("Number of non-responders")
+nrow(nonresponders)
+nonresponders.improve.mean <- mean(nonresponders$HDRS.24hr.percentchange)
+nonresponders.improve.sd <- sd(nonresponders$HDRS.24hr.percentchange)
+cat(nonresponders.improve.mean, nonresponders.improve.sd)
+``` 
+
+* Correlation between baseline HAM-D28 score and 24-hour HAM-D28 percent improvement
+```{r}
+cor.test(ketamine$Baseline_HDRS, ketamine$HDRS.24hr.percentchange)
+```
+
+\newpage
+
+## Pre-Infusion White Matter FA is Associated with 24-Hour Depression Improvement
+
+*Partial Correlations: 24-hour HAM-D28 Percent Improvement and Baseline FA*
+
+```{r}
+R.value <- double() #create empty vector
+p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  colname_baselineFA <- sprintf("%s_baselineFA",bundle)
+  baselineFA.HAMD28change.partialcorr <-
+    pcor.test(ketamine[,colname_baselineFA],
+              ketamine$HDRS.24hr.percentchange, ketamine$Age) #partial correlation controlled for age 
+  Rvalue <- baselineFA.HAMD28change.partialcorr$estimate #Obtain R value from partial correlation
+  pvalue <- baselineFA.HAMD28change.partialcorr$p.value #Obtain p-value from partial correlation
+  R.value[bundle] <- Rvalue #Save R into vector
+  p.value[bundle] <- pvalue #Save p-value into vector
+}
+
+BaselineFA.HAMD28Change.PartialCorrelations <- data.frame(R.value, p.value)
+BaselineFA.HAMD28Change.PartialCorrelations %>% arrange(p.value)
+
+```
+
+* Normality of Residuals
+```{r}
+par(mfrow=c(1,2))
+
+Shapiro.p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  colname_baselineFA <- sprintf("%s_baselineFA",bundle)
+  baselineFA.HAMD28change.lm <- lm(ketamine[,colname_baselineFA] ~ ketamine$HDRS.24hr.percentchange + ketamine$Age) 
+  shapiro <- shapiro.test(baselineFA.HAMD28change.lm$residuals)$p.value #Shapiro-Wilx
+  Shapiro.p.value[bundle] <- shapiro 
+  plot(baselineFA.HAMD28change.lm, 2) #Q-Q plot
+}
+```
+
+```{r}
+Shapiro.p.value
+```
+
+*Partial Correlations: Baseline HAM-D28 and Baseline FA*
+
+* Left CB-hippocampal portion 
+```{r}
+pcor.test(ketamine$Baseline_HDRS, ketamine$Lcing2_baselineFA, ketamine$Age)
+```
+
+* Left SLF 
+```{r}
+pcor.test(ketamine$Baseline_HDRS, ketamine$Lslf_baselineFA, ketamine$Age)
+```
+
+\newpage 
+
+## White Matter FA Increases from Pre- to Post-Infusion
+
+*Paired T-tests: Pre- and Post- Infusion FA*
+```{r}
+percentchange.mean <- double() #create empty vector
+t.value <- double() #create empty vector
+p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  
+  colname_percentchange <- sprintf("%s_FA_percentchange",bundle)
+  bundle.percentchange.mean <- mean(ketamine[,colname_percentchange])
+  percentchange.mean[bundle] <- bundle.percentchange.mean
+
+  colname_baselineFA <- sprintf("%s_baselineFA",bundle)
+  colname_postinfusionFA <- sprintf("%s_postinfusionFA",bundle)
+  FA.paired.ttest <- t.test(ketamine[,colname_postinfusionFA],
+                           ketamine[,colname_baselineFA],
+                           paired=TRUE,alternative="two.sided") #paired samples t-test
+  tvalue <- FA.paired.ttest$statistic #Obtain t-value from paired samples t-test
+  pvalue <- FA.paired.ttest$p.value #Obtain p-value from paired samples t-test
+  t.value[bundle] <- tvalue #Save t into vector
+  p.value[bundle] <- pvalue #Save p-value into vector
+}
+
+PreInfusion.PostInfusion.FA.Paired.TTests <- data.frame(percentchange.mean, t.value, p.value)
+PreInfusion.PostInfusion.FA.Paired.TTests %>% arrange(desc(percentchange.mean))
+```
+\newpage
+
+## Post-Ketamine Change in White Matter FA is Associated with 24-Hour Depression Improvement
+
+*Partial Correlations: 24-hour HAM-D28 Percent Improvement and Post-ketamine % change in FA*
+
+```{r}
+R.value <- double() #create empty vector
+p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  colname_percentchange <- sprintf("%s_FA_percentchange",bundle)
+  percentchangeFA.HAMD28change.partialcorr <-
+    pcor.test(ketamine[,colname_percentchange],
+              ketamine$HDRS.24hr.percentchange, ketamine$Age) #partial correlation controlled for age 
+  Rvalue <- percentchangeFA.HAMD28change.partialcorr$estimate #Obtain R value from partial correlation
+  pvalue <- percentchangeFA.HAMD28change.partialcorr$p.value #Obtain p-value from partial correlation
+  R.value[bundle] <- Rvalue #Save R into vector
+  p.value[bundle] <- pvalue #Save p-value into vector
+}
+
+PercentChangeFA.HAMD28Change.PartialCorrelations <- data.frame(R.value, p.value)
+PercentChangeFA.HAMD28Change.PartialCorrelations %>% arrange(p.value)
+
+```
+* Normality of Residuals
+```{r}
+par(mfrow=c(1,2))
+
+Shapiro.p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  colname_percentchange <- sprintf("%s_FA_percentchange",bundle)
+  percentchangeFA.HAMD28change.lm <- lm(ketamine[,colname_percentchange] ~ ketamine$HDRS.24hr.percentchange + ketamine$Age) 
+  shapiro <- shapiro.test(percentchangeFA.HAMD28change.lm$residuals)$p.value #Shapiro-Wilx
+  Shapiro.p.value[bundle] <- shapiro 
+  plot(percentchangeFA.HAMD28change.lm,2) #Q-Q Plot
+}
+```
+
+```{r}
+Shapiro.p.value
+```
+
+* CC-forceps minor outlier removal: partial correlation and normality of residuals 
+
+```{r}
+fminor <- ketamine %>% filter(Fminor_FA_percentchange < 3)
+pcor.test(fminor$Fminor_FA_percentchange, fminor$HDRS.24hr.percentchange, fminor$Age)
+```
+```{r}
+fminor.percentchangeFA.HAMD28change.lm <- lm(fminor$Fminor_FA_percentchange ~ 
+                                          fminor$HDRS.24hr.percentchange + fminor$Age)
+plot(fminor.percentchangeFA.HAMD28change.lm,2)
+shapiro.test(fminor.percentchangeFA.HAMD28change.lm$residuals)
+```
+\newpage 
+
+## Sensitivity Analyses: Assessing Head Motion and High Leverage Observations 
+
+### Head Motion
+
+*Baseline FA and Baseline in-scanner head motion*
+```{r}
+p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  colname_baselineFA <- sprintf("%s_baselineFA",bundle)
+  baselineFA.baselinemotion.lm <- summary(lm(ketamine[,colname_baselineFA] ~ 
+                                          ketamine$preinfusion_scan_motion + ketamine$Age))
+  pvalue <- baselineFA.baselinemotion.lm$coefficients[2,4] #Obtain p-value for motion from linear model 
+  p.value[bundle] <- pvalue #Save p-value into vector
+}
+
+BaselineFA_BaselineMotion_LinearModel <- data.frame(p.value)
+BaselineFA_BaselineMotion_LinearModel %>% arrange(p.value)
+```
+
+*Post-infusion FA and Post-infusion in-scanner head motion*
+```{r}
+p.value <- double() #create empty vector
+
+for(bundle in (c("Lifo", "Rifo", "Lcing", "Rcing", "Fmajor","Fminor","Lilf","Rilf",
+                 "Lslf","Rslf","Lunc","Runc","Fornix","Lcing2","Rcing2"))){
+  colname_postinfusionFA <- sprintf("%s_postinfusionFA",bundle)
+  postinfusionFA.postinfusionmotion.lm <- summary(lm(ketamine[,colname_postinfusionFA] ~ 
+                                          ketamine$postinfusion_scan_motion + ketamine$Age))
+  pvalue <- postinfusionFA.postinfusionmotion.lm$coefficients[2,4] #Obtain p-value for motion from linear model
+  p.value[bundle] <- pvalue #Save p-value into vector
+}
+
+PostInfusionFA_PostInfusionMotion_LinearModel <- data.frame(p.value)
+PostInfusionFA_PostInfusionMotion_LinearModel %>% arrange(p.value)
+```
+
+*Paired T-test: Pre- and Post-Infusion Head Motion*
+```{r}
+t.test(ketamine$preinfusion_scan_motion, ketamine$postinfusion_scan_motion,
+       paired=TRUE,alternative="two.sided")
+```
+
+### Cook's Distance
+
+* Left CB-hippocampal portion: 24-hour HAM-D28 Percent Improvement and Baseline FA
+```{r}
+Lcing2.baselineFA.HAMD28change <- lm(ketamine$Lcing2_baselineFA ~ 
+                                  ketamine$HDRS.24hr.percentchange + ketamine$Age) #lm
+plot(Lcing2.baselineFA.HAMD28change, 5) #Residuals v. Leverage 
+cooks.distance(Lcing2.baselineFA.HAMD28change) %>% sort #Cook's Distance
+```
+
+* Left SLF: 24-hour HAM-D28 Percent Improvement and Baseline FA
+```{r}
+Lslf.baselineFA.HAMD28change <- lm(ketamine$Lslf_baselineFA ~
+                                ketamine$HDRS.24hr.percentchange + ketamine$Age) #lm
+plot(Lslf.baselineFA.HAMD28change, 5)  #Residuals v. Leverage 
+cooks.distance(Lslf.baselineFA.HAMD28change) %>% sort #Cook's Distance
+```
+* CC-forceps minor: 24-hour HAM-D28 Percent Improvement and Post-ketamine % change in FA
+```{r}
+Fminor.percentchangeFA.HAMD28change <- lm(ketamine$Fminor_FA_percentchange ~
+                                       ketamine$HDRS.24hr.percentchange + ketamine$Age) #lm
+plot(Fminor.percentchangeFA.HAMD28change, 5)  #Residuals v. Leverage 
+cooks.distance(Fminor.percentchangeFA.HAMD28change) %>% sort #Cook's Distance
+```
+
+* Left UF: 24-hour HAM-D28 Percent Improvement and Post-ketamine % change in FA
+```{r}
+Lunc.percentchangeFA.HAMD28change <- lm(ketamine$Lunc_FA_percentchange ~
+                                     ketamine$HDRS.24hr.percentchange + ketamine$Age) #lm
+plot(Lunc.percentchangeFA.HAMD28change, 5)  #Residuals v. Leverage 
+cooks.distance(Lunc.percentchangeFA.HAMD28change) %>% sort #Cook's Distance
+```
+
+* Right UF: 24-hour HAM-D28 Percent Improvement and Post-ketamine % change in FA
+```{r}
+Runc.percentchangeFA.HAMD28change <- lm(ketamine$Runc_FA_percentchange ~
+                                     ketamine$HDRS.24hr.percentchange + ketamine$Age) #lm
+plot(Runc.percentchangeFA.HAMD28change, 5)  #Residuals v. Leverage 
+cooks.distance(Runc.percentchangeFA.HAMD28change) %>% sort #Cook's Distance
+```
